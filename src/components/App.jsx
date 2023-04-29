@@ -1,4 +1,4 @@
-import { Component } from 'react';
+import { useState, useEffect } from 'react';
 import {
   SearchBar,
   Loader,
@@ -8,87 +8,76 @@ import {
   GalleryFallback,
 } from './index.js';
 import { Container } from './App.styled.jsx';
-import startPic from '../images/start.png';
+import startPic from '../images/totoro.png';
 import errorPic from '../images/error.png';
 
-let message = '';
+export const App = () => {
+  const [query, setQuery] = useState('');
+  const [images, setImages] = useState([]);
+  const [page, setPage] = useState(1);
+  const [totalHits, setTotalHits] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
+  const [status, setStatus] = useState('start');
 
-export class App extends Component {
-  state = {
-    searchText: '',
-    images: [],
-    page: 1,
-    totalHits: 0,
-    isLoading: false,
-    status: 'start',
-  };
-  async componentDidUpdate(_, prevState) {
-    const { query, page } = this.state;
-
-    if (prevState.query !== query || prevState.page !== page) {
-      try {
-        this.setState({ isLoading: true, status: 'pending' });
-
-        const { totalHits, hits } = await fetchImages(query, page);
-
-        if (totalHits === 0) {
-          // toast.error('Nothing was found for your request');
-          this.setState({ isLoading: false, status: 'nothing' });
-          return;
-        }
-
-        this.setState(prevState => ({
-          images: page === 1 ? hits : [...prevState.images, ...hits],
-
-          totalHits:
-            page === 1
-              ? totalHits - hits.length
-              : totalHits - [...prevState.images, ...hits].length,
-        }));
-
-        this.setState({ isLoading: false });
-      } catch (error) {
-        this.setState({ status: 'error' });
-        message = error;
-        // toast.error(`Oops! Something went wrong! ${error}`);
-      }
+  useEffect(() => {
+    if (!query) {
+      return;
     }
-  }
+    setIsLoading(true);
+    setStatus('pending');
 
-  handleLoadMore = () => {
-    this.setState(prevState => ({ page: prevState.page + 1 }));
+    const fetchData = async () => {
+      const { totalHits, hits } = await fetchImages(query, page);
+
+      if (totalHits === 0) {
+        setIsLoading(false);
+        setStatus('nothing');
+        return;
+      }
+
+      setImages(prevImages => (page === 1 ? hits : [...prevImages, ...hits]));
+      setTotalHits(prevTotalHits =>
+        page === 1 ? totalHits - hits.length : prevTotalHits - hits.length
+      );
+
+      setIsLoading(false);
+    };
+
+    fetchData().catch(error => {
+      setStatus('error');
+    });
+  }, [query, page]);
+
+  const handleLoadMore = () => {
+    setPage(page => page + 1);
   };
 
-  handleQuerySubmit = query => {
-    this.setState({ query, page: 1 });
+  const handleQuerySubmit = query => {
+    setPage(1);
+    setQuery(query);
   };
 
-  render() {
-    const { images, totalHits, isLoading, status } = this.state;
-    const { handleQuerySubmit, handleLoadMore } = this;
-
-    return (
-      <Container>
-        <SearchBar onSubmit={handleQuerySubmit} />
-        {status === 'start' && (
-          <GalleryFallback img={startPic} message={'Try to find a photo!'} />
-        )}
-        {status === 'nothing' && (
-          <GalleryFallback
-            img={errorPic}
-            message={'Oops, nothing was found for your request'}
-          />
-        )}
-        {status === 'error' && (
-          <GalleryFallback
-            img={errorPic}
-            message={`Oops! Something went wrong! ${message}`}
-          />
-        )}
-        {images && <ImageGallery images={images} />}
-        {!!totalHits && <Button onLoadMore={handleLoadMore} />}
-        {isLoading && <Loader />}
-      </Container>
-    );
-  }
-}
+  return (
+    <Container>
+      <SearchBar onSubmit={handleQuerySubmit} />
+      {status === 'start' && (
+        <GalleryFallback img={startPic} message={'Try to find a photo!'} />
+      )}
+      {status === 'nothing' && (
+        <GalleryFallback
+          img={errorPic}
+          message={'Oops, nothing was found for your request'}
+        />
+      )}
+      {status === 'error' && (
+        <GalleryFallback
+          img={errorPic}
+          message={`Oops! Something went wrong!`}
+        />
+      )}
+      {images && <ImageGallery images={images} />}
+      {!!totalHits && <Button onLoadMore={handleLoadMore} />}
+      {isLoading && <Loader />}
+    </Container>
+  );
+};

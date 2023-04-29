@@ -74,3 +74,8 @@ export const SearchInput = styled.input`
     font-size: 18px;
   }
 `;
+
+export const Pixabay = styled.div`
+  position: relative;
+  right: 50px;
+`;

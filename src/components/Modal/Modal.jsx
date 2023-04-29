@@ -1,46 +1,46 @@
-import { Component } from 'react';
+import { useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Overlay, ModalWindow } from './Modal.styled';
 import PropTypes from 'prop-types';
 
 const modalRoot = document.querySelector('#modal-root');
 
-class Modal extends Component {
-  componentDidMount() {
-    window.addEventListener('keydown', this.onEsc);
-  }
+const Modal = ({ closeModal, children }) => {
+  useEffect(() => {
+    const closeByEsc = evt => {
+      if (evt.code !== 'Escape') {
+        return;
+      }
+      closeModal();
+    };
 
-  componentWillUnmount() {
-    window.removeEventListener('keydown', this.onEsc);
-  }
+    window.addEventListener('keydown', closeByEsc);
 
-  onEsc = evt => {
-    if (evt.code !== 'Escape') {
-      return;
-    }
-    this.props.closeModal();
-  };
+    return () => {
+      window.removeEventListener('keydown', closeByEsc);
+    };
+  }, [closeModal]);
 
-  onBackdropClick = evt => {
+  const onBackdropClick = evt => {
     if (evt.currentTarget === evt.target) {
-      this.props.closeModal();
+      closeModal();
     }
   };
 
-  render() {
-    return createPortal(
-      <Overlay onClick={this.onBackdropClick}>
-        <ModalWindow>{this.props.children}</ModalWindow>
-      </Overlay>,
-      modalRoot
-    );
-  }
-}
+  return createPortal(
+    <Overlay onClick={onBackdropClick}>
+      <ModalWindow>{children}</ModalWindow>
+    </Overlay>,
+    modalRoot
+  );
+};
 
 Modal.propTypes = {
   closeModal: PropTypes.func.isRequired,
-  modalImg: PropTypes.string.isRequired,
-  tags: PropTypes.string.isRequired,
+  children: PropTypes.oneOfType([
+    PropTypes.arrayOf(PropTypes.node),
+    PropTypes.node,
+  ]).isRequired,
 };
 
 export default Modal;
