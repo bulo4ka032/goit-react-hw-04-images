@@ -54,6 +54,9 @@ export const App = () => {
 
   const handleQuerySubmit = query => {
     setPage(1);
+    setImages([]);
+    setIsLoading(false);
+    setTotalHits(0);
     setQuery(query);
   };
 
