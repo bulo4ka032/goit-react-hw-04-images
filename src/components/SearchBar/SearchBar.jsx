@@ -40,6 +40,7 @@ const SearchBar = ({ onSubmit }) => {
           <BiSearch width="20" />
         </Submit>
         <SearchInput
+          placeholder="Search photos by tags"
           type="text"
           name="searchText"
           value={query}
